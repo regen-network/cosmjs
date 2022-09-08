@@ -166,6 +166,8 @@ describe("encoding", () => {
 
       expect(parsedSignBytes.msgs[0]).toEqual(sdkAminoMsg);
       expect(parsedSignBytes.msgs[1]).toEqual(regenAminoMsg.value);
+
+      expect(signDoc.msgs[1].type).toEqual("regen.core/MsgSend")
     });
   });
 });
