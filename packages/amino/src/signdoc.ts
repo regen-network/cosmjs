@@ -75,12 +75,43 @@ export function serializeSignDoc(signDoc: StdSignDoc): Uint8Array {
       // this short term workaround makes cosmjs compatible with regen-ledger v4.0
       // until regen ledger upgrades with the fix in v5.0
       // ref: https://github.com/regen-network/regen-ledger/pull/1480
-      return aminoMsg.value
+
+      console.log("unstripped item:", aminoMsg.value)
+      var foo = stripTypeFields(aminoMsg.value)
+      console.log("stripped item:", foo)
+      return foo
     } else {
       return aminoMsg
     }
   })
 
+  function stripTypeFields(msg: any): any {
+    var res: any = {};
+    for (const [key, val] of Object.entries(msg)) {
+      // if the key is '$type' we don't include it in the result
+      // relace below with "if (key != '$type' && val != ''){" to get regen-js test passing
+      if (key != '$type'){
+        var strippedValue: any;
+        if (Array.isArray(val)){
+          strippedValue = [];
+          for(const elt of val) {
+            if(typeof elt === 'object'){
+              strippedValue.push(stripTypeFields(elt))
+            } else {
+              strippedValue.push(elt)
+            }
+          }
+        } else if (typeof val === 'object'){
+          strippedValue = stripTypeFields(val)
+        } else {
+          strippedValue = val
+        }
+        
+        res[key] = strippedValue;
+      }
+    }
+    return res
+  }
   
   var fixedSignDoc = {...signDoc, msgs: fixedMsgs};
 

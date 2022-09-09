@@ -147,9 +147,9 @@ describe("encoding", () => {
       const regenAminoMsg: AminoMsg = {
         type: "regen.core/MsgSend",
         value: {
-          from_address: testAddress,
-          to_address: makeRandomAddress(),
-          amount: [{ amount: "1234567", denom: "ecocredit" }],
+          sender: testAddress,
+          recipient: makeRandomAddress(),
+          credits: [{ '$type': 'regen.ecocredit.v1.MsgSend.SendCredits', tradableAmount: "0.01", batchDenom: "C01-001-20170606-20210601-007" }],
         },
       };
       const fee = {
@@ -165,7 +165,7 @@ describe("encoding", () => {
       const parsedSignBytes = JSON.parse(fromUtf8(serializedSignBytes));
 
       expect(parsedSignBytes.msgs[0]).toEqual(sdkAminoMsg);
-      expect(parsedSignBytes.msgs[1]).toEqual(regenAminoMsg.value);
+      expect(parsedSignBytes.msgs[1]).toEqual({...regenAminoMsg.value, credits: [{tradableAmount: "0.01", batchDenom: "C01-001-20170606-20210601-007" }]});
 
       expect(signDoc.msgs[1].type).toEqual("regen.core/MsgSend")
     });
