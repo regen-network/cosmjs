@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { Random } from "@cosmjs/crypto";
-import { toBech32 } from "@cosmjs/encoding";
+import { toBech32, fromUtf8} from "@cosmjs/encoding";
 
-import { AminoMsg, makeSignDoc, sortedJsonStringify } from "./signdoc";
+import { AminoMsg, makeSignDoc, serializeSignDoc, sortedJsonStringify } from "./signdoc";
 
 function makeRandomAddress(): string {
   return toBech32("cosmos", Random.getBytes(20));
@@ -130,6 +130,44 @@ describe("encoding", () => {
         sequence: sequence.toString(),
         memo: "",
       });
+    });
+  });
+
+  describe("serializeSignDoc", () => {
+    it("serializes regen and SDK messages differently (until regen-ledger#1480 is released)", () => {
+      const chainId = "testspace-12";
+      const sdkAminoMsg: AminoMsg = {
+        type: "cosmos-sdk/MsgDelegate",
+        value: {
+          delegator_address: testAddress,
+          validator_address: testValidatorAddress,
+          amount: { amount: "1234", denom: "ustake" },
+        },
+      };
+      const regenAminoMsg: AminoMsg = {
+        type: "regen.core/MsgSend",
+        value: {
+          sender: testAddress,
+          recipient: makeRandomAddress(),
+          credits: [{ '$type': 'regen.ecocredit.v1.MsgSend.SendCredits', tradableAmount: "0.01", batchDenom: "C01-001-20170606-20210601-007" }],
+        },
+      };
+      const fee = {
+        amount: [{ amount: "2000", denom: "ucosm" }],
+        gas: "180000", // 180k
+      };
+      const memo = "Use your power wisely";
+      const accountNumber = 15;
+      const sequence = 16;
+
+      const signDoc = makeSignDoc([sdkAminoMsg, regenAminoMsg], fee, chainId, memo, accountNumber, sequence);
+      const serializedSignBytes = serializeSignDoc(signDoc)
+      const parsedSignBytes = JSON.parse(fromUtf8(serializedSignBytes));
+
+      expect(parsedSignBytes.msgs[0]).toEqual(sdkAminoMsg);
+      expect(parsedSignBytes.msgs[1]).toEqual(regenAminoMsg.value);
+
+      expect(signDoc.msgs[1].type).toEqual("regen.core/MsgSend")
     });
   });
 });
