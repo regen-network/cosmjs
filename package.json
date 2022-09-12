@@ -49,5 +49,6 @@
     "eslint": "^7.5",
     "prettier": "^2.4.1",
     "typescript": "~4.4"
-  }
+  },
+  "version": "0.28.13-regen-2"
 }
